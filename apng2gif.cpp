@@ -1,4 +1,4 @@
-/* APNG to GIF Converter 1.8
+﻿/* APNG to GIF Converter 1.8
  *
  * This program converts APNG animations into animated GIF format.
  * Wu64 quantizer is used for true-color files.
@@ -28,12 +28,20 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  */
+#include <tchar.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include <iostream>
 #include "png.h"     /* original (unpatched) libpng is ok */
 #include "zlib.h"
+
+#ifndef _UNICODE
+#define _tcout std::cout
+#else
+#define _tcout std::wcout
+#endif
 
 #define notabc(c) ((c) < 65 || (c) > 122 || ((c) > 90 && (c) < 97))
 
@@ -227,7 +235,7 @@ int processing_finish(png_structp png_ptr, png_infop info_ptr)
   return 0;
 }
 
-int load_apng(char * szIn, std::vector<Image>& img, unsigned int * num_loops)
+int load_apng(_TCHAR * szIn, std::vector<Image>& img, unsigned int * num_loops)
 {
   FILE * f;
   unsigned int id, i, j, w, h, w0, h0, x0, y0;
@@ -246,9 +254,8 @@ int load_apng(char * szIn, std::vector<Image>& img, unsigned int * num_loops)
   Image frameNext;
   int res = -1;
 
-  printf("Reading '%s'...\n", szIn);
-
-  if ((f = fopen(szIn, "rb")) != 0)
+  _tcout << "Reading '"<< szIn << "'..." << std::endl;
+  if ((f = _tfopen(szIn, _T("rb"))) != 0)
   {
     if (fread(sig, 1, 8, f) == 8 && png_sig_cmp(sig, 0, 8) == 0)
     {
@@ -839,7 +846,7 @@ void apng_to_agif(std::vector<Image>& img, unsigned char * pAGIF)
     colors8 += bit[a];
     colors7++;
   }
-  printf("%d colors.\n", colors8);
+  _tcout << colors8 << " colors." << std::endl;
 
   if (colors8<=256)
   {
@@ -935,7 +942,7 @@ void apng_to_agif(std::vector<Image>& img, unsigned char * pAGIF)
   }
   else
   {
-    printf("Wu quantization...\n");
+    _tcout << "Wu quantization..." << std::endl;
 
     WuHistogram(img, pAGIF, size);
     WuMoments();
@@ -1079,7 +1086,7 @@ int EncodeLZW(unsigned char * data, int datasize, FILE * f1, unsigned char minco
   return 0;
 }
 
-int save_agif(char * szOut, std::vector<Image>& img, unsigned char * pAGIF, unsigned int num_loops)
+int save_agif(_TCHAR * szOut, std::vector<Image>& img, unsigned char * pAGIF, unsigned int num_loops)
 {
   unsigned char gif_head[13] = {'G', 'I', 'F', '8', '9', 'a', 0, 0, 0, 0, 0, 0, 0};
   unsigned char netscape[19] = {0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0', 3, 1, 0, 0, 0};
@@ -1102,15 +1109,15 @@ int save_agif(char * szOut, std::vector<Image>& img, unsigned char * pAGIF, unsi
   int           res = 1;
   FILE        * f1;
 
-  if ((f1 = fopen(szOut, "wb")) == 0)
+  if ((f1 = _tfopen(szOut, _T("wb"))) == 0)
   {
-    printf("Error: can't open '%s'\n", szOut);
+    _tcout << "Error: can't open '" << szOut <<"'" << std::endl;
     return res;
   }
 
   ptemp = new unsigned char[imagesize];
 
-  printf("Writing '%s'...\n", szOut);
+  _tcout << "Writing '" << szOut << "'..." << std::endl;
 
   memcpy(gif_head+6, &w, 2);
   memcpy(gif_head+8, &h, 2);
@@ -1287,25 +1294,26 @@ int save_agif(char * szOut, std::vector<Image>& img, unsigned char * pAGIF, unsi
   return res;
 }
 
-int main(int argc, char** argv)
+int _tmain(int argc, _TCHAR** argv)
 {
-  char * szInput;
-  char   szOut[256];
-  char * szOpt;
-  char * szExt;
+  _TCHAR * szInput;
+  _TCHAR   szOut[256];
+  _TCHAR * szOpt;
+  _TCHAR * szExt;
   unsigned int num_loops = 0;
   std::vector<Image> img;
 
-  printf("\napng2gif 1.8\n\n");
+  _tcout << "\napng2gif 1.8\n" << std::endl;
 
-  if (argc > 1 && strlen(argv[1]) < 256)
+  if (argc > 1 && _tcslen(argv[1]) < 256)
     szInput = argv[1];
   else
   {
-    printf("Usage : apng2gif anim.png [anim.gif] [-t tlevel] [-b bcolor]\n\n"
-           "tlevel: transparency threshold level (format: -t 128)\n"
-           "bcolor: background blend color (format: -b \"#808080\" or -b 128 128 128)\n"
-           "When -b is used, -t is ignored. Default is -t 128, no bcolor.\n");
+    _tcout << "Usage : apng2gif anim.png [anim.gif] [-t tlevel] [-b bcolor]" << std::endl << std::endl
+           << "tlevel: transparency threshold level (format: -t 128)" << std::endl
+           << "bcolor: background blend color (format: -b \"#808080\" or -b 128 128 128)" << std::endl
+           << "When -b is used, -t is ignored. Default is -t 128, no bcolor." << std::endl
+    ;
     return 1;
   }
 
@@ -1330,7 +1338,7 @@ int main(int argc, char** argv)
             i--;
           else
           {
-            tlevel = atoi(szOpt);
+            tlevel = _tstoi(szOpt);
             if (tlevel < 1 || tlevel > 255)
               tlevel = 128;
           }
@@ -1349,7 +1357,7 @@ int main(int argc, char** argv)
           else
           if (szOpt[0] == '#')
           {
-            sscanf(szOpt+1, "%x", (unsigned int*)(&bcolor));
+            _stscanf(szOpt+1, _T("%x"), (unsigned int*)(&bcolor));
             back_r = (bcolor>>16)&0xFF;
             back_g = (bcolor>>8)&0xFF;
             back_b = (bcolor)&0xFF;
@@ -1357,9 +1365,9 @@ int main(int argc, char** argv)
           else
           if (i<argc-2)
           {
-            back_r = atoi(argv[i]);
-            back_g = atoi(argv[++i]);
-            back_b = atoi(argv[++i]);
+            back_r = _tstoi(argv[i]);
+            back_g = _tstoi(argv[++i]);
+            back_b = _tstoi(argv[++i]);
             if (back_r < 0)   back_r = 0;
             if (back_r > 255) back_r = 255;
             if (back_g < 0)   back_g = 0;
@@ -1373,7 +1381,7 @@ int main(int argc, char** argv)
     }
     else
       if (szOut[0] == 0)
-        strcpy(szOut, szOpt);
+        _tcscpy(szOut, szOpt);
   }
 
   if (bcolor != -1)
@@ -1381,15 +1389,15 @@ int main(int argc, char** argv)
 
   if (szOut[0] == 0)
   {
-    strcpy(szOut, szInput);
-    if ((szExt = strrchr(szOut, '.')) != NULL) *szExt = 0;
-    strcat(szOut, ".gif");
+    _tcscpy(szOut, szInput);
+    if ((szExt = _tcsrchr(szOut, '.')) != NULL) *szExt = 0;
+    _tcscat(szOut, _T(".gif"));
   }
 
   int res = load_apng(szInput, img, &num_loops);
   if (res < 0)
   {
-    printf("load_apng() failed: '%s'\n", szInput);
+    _tcout << "load_apng() failed: '" << szInput << "'" << std::endl;
     return 1;
   }
 
@@ -1407,7 +1415,7 @@ int main(int argc, char** argv)
     unsigned int w = img[0].w;
     unsigned int h = img[0].h;
     unsigned int num_frames = (unsigned int)img.size();
-    printf("%d frame%s.\n", num_frames, (num_frames==1) ? "" : "s");
+    _tcout << num_frames << "frame" << (num_frames > 1 ? "s" : "") << "." << std::endl;
 
     unsigned char * pAGIF = new unsigned char[w * h * num_frames * 4];
 
@@ -1415,7 +1423,7 @@ int main(int argc, char** argv)
 
     if (save_agif(szOut, img, pAGIF, num_loops) != 0)
     {
-      printf("save_agif() failed: '%s'\n", szOut);
+      _tcout << "save_agif() failed: '" << szOut << "'" << std::endl;
       return 1;
     }
 
@@ -1427,7 +1435,7 @@ int main(int argc, char** argv)
     delete[] pAGIF;
   }
 
-  printf("all done\n");
+  _tcout << "all done" << std::endl;
 
   return 0;
 }
