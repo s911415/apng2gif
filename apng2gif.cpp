@@ -34,6 +34,8 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
+#include <fcntl.h>
+#include <io.h>
 #include "png.h"     /* original (unpatched) libpng is ok */
 #include "zlib.h"
 
@@ -1294,6 +1296,11 @@ int save_agif(_TCHAR * szOut, std::vector<Image>& img, unsigned char * pAGIF, un
   return res;
 }
 
+void bootstrap()
+{
+    _setmode(_fileno(stdout), _O_U16TEXT);
+}
+
 int _tmain(int argc, _TCHAR** argv)
 {
   _TCHAR * szInput;
@@ -1302,6 +1309,8 @@ int _tmain(int argc, _TCHAR** argv)
   _TCHAR * szExt;
   unsigned int num_loops = 0;
   std::vector<Image> img;
+
+  bootstrap();
 
   _tcout << "\napng2gif 1.8\n" << std::endl;
 
